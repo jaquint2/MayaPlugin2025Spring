@@ -1,20 +1,14 @@
-from PySide2.QtWidgets import QHBoxLayout, QLabel, QLineEdit, QMainWindow, QMessageBox, QPushButton, QSlider, QVBoxLayout, QWidget, QColorDialog
-from PySide2.QtCore import Qt
+import importlib
+import MayaUtils
+importlib.reload(MayaUtils)
+
+from MayaUtils import MayaWindow
+from PySide2.QtGui import QColor
+from PySide2.QtWidgets import QHBoxLayout, QLabel, QLineEdit, QMessageBox, QPushButton, QSlider, QVBoxLayout, QColorDialog
+from PySide2.QtCore import Qt, Signal
 from maya.OpenMaya import MVector
-import maya.OpenMayaUI as omui
 import maya.mel as mel
-import shiboken2
-
 import maya.cmds as mc
-
-def getMayaMainWindow() -> QMainWindow:
-    mainWindow = omui.MQtUtil.mainWindow()
-    return shiboken2.wrapInstance(int(mainWindow), QMainWindow)
-
-class MayaWindow(QWidget):
-    def __init__(self):
-        super().__init__(parent=getMayaMainWindow())
-        self.setWindowFlags(Qt.WindowType.Window)
 
 class LimbRigger:
     def __init__(self):
@@ -205,5 +199,3 @@ class LimbRiggerWidget(MayaWindow):
 
 limbRiggerWidget = LimbRiggerWidget()
 limbRiggerWidget.show()
-
-getMayaMainWindow()
