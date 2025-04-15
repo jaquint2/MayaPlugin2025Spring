@@ -150,6 +150,11 @@ class LimbRiggerWidget(MayaWindow):
         colorLayout.addWidget(self.colorSwatch)
         self.masterLayout.addLayout(colorLayout)
 
+        # Set Color Button
+        self.setColorButton = QPushButton("Set Color")
+        self.setColorButton.clicked.connect(self.SetColorToSelected)
+        self.masterLayout.addWidget(self.setColorButton)
+
         ctrlSizeSlider = QSlider()
         ctrlSizeSlider.setOrientation(Qt.Horizontal)
         ctrlSizeSlider.setRange(1, 30)
@@ -185,6 +190,18 @@ class LimbRiggerWidget(MayaWindow):
             b = color.blue() / 255.0
             self.rigger.controllerColor = (r, g, b)
             self.colorSwatch.setStyleSheet(f"background-color: rgb({color.red()}, {color.green()}, {color.blue()});")
+
+    def SetColorToSelected(self):
+        selection = mc.ls(sl=True)
+        if not selection:
+            QMessageBox.warning(self, "No Selection", "Please select a controller to apply the color.")
+            return
+
+        for obj in selection:
+            try:
+                self.rigger.ApplyColorOverride(obj)
+            except Exception as e:
+                QMessageBox.critical(self, "Error", f"Failed to apply color to {obj}.\n{e}")
 
 limbRiggerWidget = LimbRiggerWidget()
 limbRiggerWidget.show()
