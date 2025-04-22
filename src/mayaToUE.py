@@ -1,5 +1,6 @@
 from MayaUtils import *
-from PySide2.QtWidgets import QLineEdit, QListWidget, QMessageBox, QPushButton, QVBoxLayout
+from PySide2.QtGui import QIntValidator, QRegExpValidator
+from PySide2.QtWidgets import QCheckBox, QHBoxLayout, QLabel, QLineEdit, QListWidget, QMessageBox, QPushButton, QVBoxLayout
 import maya.cmds as mc
 
 def TryAction(actionFunc):
@@ -24,6 +25,11 @@ class MayaToUE:
         self.animations : list[AnimClip] = []
         self.fileName = ""
         self.saveDir = ""
+
+    def AddNewAnimClip(self):
+        self.animations.append(AnimClip())
+        return self.animations[-1]
+
 
     def AddSelectedMeshes(self):
         selection = mc.ls(sl=True)
@@ -65,6 +71,63 @@ class MayaToUE:
         
         self.rootJnt = selection[0]
 
+class AnimClipWidget(QWidget):
+    def __init__(self, animClip: AnimClip):
+        super().__init__()
+        self.animClip = animClip
+        self.masterLayout = QHBoxLayout()
+        self.setLayout(self.masterLayout)
+
+        shouldExportCheckbox = QCheckBox()
+        shouldExportCheckbox.setChecked(self.animClip.shouldExport)
+        self.masterlayout.addWidget(shouldExportCheckbox)
+        shouldExportCheckbox.toggled.connect(self.ShouldExportCheckboxToggled)
+
+        subfixLabel = QLabel("subfix")
+        self.masterLayout.addWidget(subfixLabel)
+
+        subfixLineEdit = QLineEdit()
+        subfixLineEdit.setValidator(QRegExpValidator("[a-zA-Z0-9_]+"))
+        subfixLineEdit.setText(self.animClip.subfix)
+        subfixLineEdit.textChanged.connect(self.SubfixTextChanged)
+        self.masterLayout.addWidget(subfixLineEdit)
+
+        minFrameLabel = QLabel("Min: ")
+        self.masterLayout.addWidget(minFrameLabel)
+        minFrameLineEdit = QLineEdit()
+        minFrameLineEdit.setValidator(QIntValidator())
+        minFrameLineEdit.setText(str(int(self.animClip.frameMin)))
+        minFrameLineEdit.textChanged.connect(self.MinFrameChanged)
+        self.masterLayout.addWidget(minFrameLineEdit)
+
+        maxFrameLabel = QLabel("Max: ")
+        self.masterLayout.addWidget(maxFrameLabel)
+        maxFrameLineEdit = QLineEdit()
+        maxFrameLineEdit.setValidator(QIntValidator())
+        maxFrameLineEdit.setText(str(int(self.animClip.frameMax)))
+        maxFrameLineEdit.textChanged.connect(self.MaxFrameChanged)
+        self.masterLayout.addWidget(maxFrameLineEdit)
+
+        setRangeBtn = QPushButton("[-]")
+        setRangeBtn.clicked.connect(self.SetRangeBtnClicked)
+
+    def SetRangeBtnClicked(self):
+        mc.playbackOptions(e=True, min = self.animClip.frameMin, max = self.animClip.frameMax)
+        mc.playbackOptions(e=True, ast = self.animClip.frameMin, aet = self.animClip.frameMax)
+
+    def MaxFrameChanged(self, newVal):
+        self.animClip.frameMax = int(newVal)
+
+    def MinFrameChanged(self, newVal):
+        self.animClip.frameMin = int(newVal)
+
+
+    def SubfixTextChanged(self, newText):
+        self.animClip.subfix = newText
+
+    def ShouldExportCheckboxToggled(self):
+        self.animClip.shouldExport = not self.animClip.shouldExport
+
 class MayaToUEWidget(MayaWindow):
     def GetWidgetUniqueName(self):
         return "MayaToUEWidget"
@@ -96,7 +159,20 @@ class MayaToUEWidget(MayaWindow):
         addMeshesBtn = QPushButton("Add Meshes")
         addMeshesBtn.clicked.connect(self.AddMeshesBtnClicked)
         self.masterLayout.addWidget(addMeshesBtn)
-        
+
+        addAnimEntryBtn = QPushButton("Add Animation Clip")
+        addAnimEntryBtn.clicked.connect(self.AddAnimEntryBtnClicked)
+        self.masterLayout.addWidget(addAnimEntryBtn)
+
+        self.animClipEntryLayout = QVBoxLayout()
+        self.masterLayout.addLayout(self.animClipEntryLayout)
+
+    @TryAction
+    def AddAnimEntryBtnClicked(self):
+        newAnimClip = self.mayaToUE.AddNewAnimClip()
+        newAnimClipWidget = AnimClipWidget(newAnimClip)
+        self.animClipEntryLayout.addWidget(newAnimClipWidget)
+
 
     @TryAction
     def AddMeshesBtnClicked(self):
