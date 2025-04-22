@@ -1,5 +1,5 @@
 from MayaUtils import *
-from PySide2.QtWidgets import QLineEdit, QMessageBox, QPushButton, QVBoxLayout
+from PySide2.QtWidgets import QLineEdit, QListWidget, QMessageBox, QPushButton, QVBoxLayout
 import maya.cmds as mc
 
 def TryAction(actionFunc):
@@ -24,6 +24,23 @@ class MayaToUE:
         self.animations : list[AnimClip] = []
         self.fileName = ""
         self.saveDir = ""
+
+    def AddSelectedMeshes(self):
+        selection = mc.ls(sl=True)
+
+        if not selection:
+            raise Exception("No Mesh Selected, please select all the meshes of your rig")
+        
+        meshes = []
+        for sel in selection:
+            if IsMesh(sel):
+                meshes.append(sel)
+
+        if len(meshes) == 0:
+            raise Exception("No Mesh Selected, please select all the meshes of your rig")
+        
+        self.models = meshes
+
 
     def AddRootJoint(self):
         if not self.rootJnt:
@@ -66,9 +83,27 @@ class MayaToUEWidget(MayaWindow):
 
         setSelectionAsRootjntBtn = QPushButton("Set Root Joint")
         setSelectionAsRootjntBtn.clicked.connect(self.SetSelectedAsRootJntBtnClicked)
+        self.masterLayout.addWidget(setSelectionAsRootjntBtn)
 
         addRootJntBtn = QPushButton("add Root Joint")
         addRootJntBtn.clicked.connect(self.AddRootJntBtnClicked)
+        self.masterLayout.addWidget(addRootJntBtn)
+
+        self.meshList = QListWidget()
+        self.masterLayout.addWidget(self.meshList)
+        self.meshList.setMaximumHeight(100)
+
+        addMeshesBtn = QPushButton("Add Meshes")
+        addMeshesBtn.clicked.connect(self.AddMeshesBtnClicked)
+        self.masterLayout.addWidget(addMeshesBtn)
+        
+
+    @TryAction
+    def AddMeshesBtnClicked(self):
+        self.mayaToUE.AddSelectedMeshes()
+        self.meshList.clear()
+        self.meshList.addItems(self.mayaToUE.models)
+
 
     @TryAction
     def AddRootJntBtnClicked(self):
