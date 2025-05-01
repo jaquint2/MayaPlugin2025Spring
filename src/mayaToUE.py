@@ -90,6 +90,12 @@ class MayaToUE:
         command = "".join(commandLines)
         print(command)
 
+        remoteExec = remote_execution.RemoteExecution()
+        remoteExec.start()
+        remoteExec.open_command_connection(remoteExec.remote_nodes)
+        remoteExec.run_command(command)
+        remoteExec.stop()
+
 
     def GetSkeletalMeshSavePath(self):
         savePath = os.path.join(self.saveDir, self.fileName + ".fbx")
